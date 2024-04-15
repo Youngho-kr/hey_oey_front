@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
 
 void main() {
@@ -10,50 +11,60 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: HomePage(),
+      title: 'Flutter Chat App',
+      home: ChatScreen(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
+class ChatScreen extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  _ChatScreenState createState() => _ChatScreenState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ChatScreenState extends State<ChatScreen> {
+  final List<String> _messages = [];
   final TextEditingController _controller = TextEditingController();
+  final String _serverUrl = 'http://127.0.0.1:5000/messages';
 
-  Future<void> sendPostRequest(String message) async {
-    Uri url = Uri.parse('http://127.0.0.1:5000/echo');
+  @override
+  void initState() {
+    super.initState();
+    Timer.periodic(Duration(seconds: 2), (timer) {
+      _fetchMessages();
+    });
+  }
+
+  Future<void> _fetchMessages() async {
     try {
-      var response = await http.post(url,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'message': message,
-          }));
-
+      final response = await http.get(Uri.parse(_serverUrl));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Response from server'),
-            content: Text('Echoed Message: ${data["message"]}'),
-            actions: <Widget>[
-              TextButton(
-                child: Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+        setState(() {
+          _messages.clear();
+          List<dynamic> messagesJson = json.decode(response.body);
+          messagesJson.forEach((messageJson) {
+            _messages.add("${messageJson['user']}: ${messageJson['message']}");
+          });
+        });
       } else {
-        throw Exception('Failed to send data.');
+        throw Exception('Failed to load messages');
       }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> _sendMessage(String message) async {
+    try {
+      final response = await http.post(
+        Uri.parse(_serverUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'user': 'User', 'message': message}),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to send message');
+      }
+      _controller.clear();
     } catch (e) {
       print(e);
     }
@@ -63,27 +74,40 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('POST Request Example'),
+        title: Text("Flutter Chat"),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(hintText: 'Enter your message here'),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: ListView.builder(
+              itemCount: _messages.length,
+              itemBuilder: (context, index) => ListTile(
+                title: Text(_messages[index]),
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                if (_controller.text.isNotEmpty) {
-                  sendPostRequest(_controller.text);
-                }
-              },
-              child: Text('Send POST Request'),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(hintText: "Type a message..."),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    if (_controller.text.isNotEmpty) {
+                      _sendMessage(_controller.text);
+                    }
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
