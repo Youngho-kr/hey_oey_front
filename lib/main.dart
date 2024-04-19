@@ -27,7 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, dynamic>> _messages = [];
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final String _serverUrl = 'http://127.0.0.1:5000/messages';
+  final String _serverUrl = 'http://127.0.0.1:5000/api/messages';
 
   @override
   void initState() {
@@ -77,7 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.add({"user": 'User', "message": message}); // 메시지 추가
       });
       _controller.clear();
-      _scrollToBottom();
+      Future.delayed(Duration(milliseconds: 100), _scrollToBottom);
 
       final response = await http.post(
         Uri.parse(_serverUrl),
