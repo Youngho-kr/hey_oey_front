@@ -60,6 +60,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _messages.add({
               "user": messageJson['user'],
               "message": messageJson['message'],
+              "intent": messageJson['intent'],
             });
             Future.delayed(Duration(milliseconds: 100), _scrollToBottom);
           }
@@ -115,6 +116,21 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _oeyProfile(context, index) {
+    if (_messages[index]['intent'] == "긍정")
+      return Image.asset("assets/images/oey_positive.png",
+          width: 60.0, height: 60.0, fit: BoxFit.cover);
+    else if (_messages[index]['intent'] == "경청")
+      return Image.asset("assets/images/oey_listening.png",
+          width: 60.0, height: 60.0, fit: BoxFit.cover);
+    else if (_messages[index]['intent'] == "공감")
+      return Image.asset("assets/images/oey_sympathy.png",
+          width: 60.0, height: 60.0, fit: BoxFit.cover);
+    else {
+      return SizedBox();
+    }
+  }
+
   Widget chatWidget(context, index) {
     return Container(
       padding: EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
@@ -128,8 +144,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 : MainAxisAlignment.end,
             children: [
               if (_messages[index]['user'] == "OEY")
-                Image.asset("assets/images/oey_default.png",
-                    width: 60.0, height: 60.0, fit: BoxFit.cover),
+                _oeyProfile(context, index),
               Flexible(
                 child: Container(
                   decoration: BoxDecoration(
@@ -153,6 +168,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget typeWidget() {
+    void _sendMessageHandler() {
+      if (_controller.text.isNotEmpty) {
+        _sendMessage(_controller.text);
+        _controller.clear();
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -161,14 +183,15 @@ class _ChatScreenState extends State<ChatScreen> {
             child: TextField(
               controller: _controller,
               decoration: InputDecoration(hintText: "Type a message..."),
+              onSubmitted: (text) {
+                _sendMessageHandler();
+              },
             ),
           ),
           IconButton(
             icon: Icon(Icons.send),
             onPressed: () {
-              if (_controller.text.isNotEmpty) {
-                _sendMessage(_controller.text);
-              }
+              _sendMessageHandler();
             },
           ),
         ],
