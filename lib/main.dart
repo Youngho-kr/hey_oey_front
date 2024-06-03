@@ -27,7 +27,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, dynamic>> _messages = [];
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final String _serverUrl = 'http://127.0.0.1:5000/api/messages';
+  // final String _serverUrl = 'http://127.0.0.1:5000/api/messages';
+  final String _serverUrl = 'http://10.0.2.2:5000/api/messages';
 
   @override
   void initState() {
@@ -96,7 +97,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Flutter Chat"),
+        title: Text("Hey, 오은영"),
       ),
       body: Column(
         children: <Widget>[
@@ -105,50 +106,70 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount: _messages.length,
                 controller: _scrollController,
                 itemBuilder: (context, index) {
-                  return Container(
-                    padding: EdgeInsets.only(
-                        left: 14, right: 14, top: 10, bottom: 10),
-                    child: Align(
-                      alignment: (_messages[index]['user'] == "OEY"
-                          ? Alignment.topLeft
-                          : Alignment.topRight),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: (_messages[index]['user'] == "OEY"
-                              ? Colors.grey.shade200
-                              : Colors.blue[200]),
-                        ),
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          _messages[index]['message'],
-                          style: TextStyle(fontSize: 15),
-                        ),
-                      ),
-                    ),
-                  );
+                  return chatWidget(context, index);
                 }),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(hintText: "Type a message..."),
+          typeWidget(),
+        ],
+      ),
+    );
+  }
+
+  Widget chatWidget(context, index) {
+    return Container(
+      padding: EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
+      child: Align(
+          alignment: (_messages[index]['user'] == "OEY"
+              ? Alignment.topLeft
+              : Alignment.topRight),
+          child: Row(
+            mainAxisAlignment: _messages[index]['user'] == "OEY"
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.end,
+            children: [
+              if (_messages[index]['user'] == "OEY")
+                Image.asset("assets/images/oey_default.png",
+                    width: 60.0, height: 60.0, fit: BoxFit.cover),
+              Flexible(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: (_messages[index]['user'] == "OEY"
+                        ? Colors.grey.shade200
+                        : Colors.blue[200]),
                   ),
+                  padding: EdgeInsets.all(16),
+                  child: Text(_messages[index]['message'],
+                      style: TextStyle(fontSize: 15),
+                      softWrap: true,
+                      overflow: TextOverflow.visible),
                 ),
-                IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: () {
-                    if (_controller.text.isNotEmpty) {
-                      _sendMessage(_controller.text);
-                    }
-                  },
-                ),
-              ],
+              ),
+              if (_messages[index]['user'] != "OEY")
+                Icon(Icons.face, size: 60.0),
+            ],
+          )),
+    );
+  }
+
+  Widget typeWidget() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(hintText: "Type a message..."),
             ),
+          ),
+          IconButton(
+            icon: Icon(Icons.send),
+            onPressed: () {
+              if (_controller.text.isNotEmpty) {
+                _sendMessage(_controller.text);
+              }
+            },
           ),
         ],
       ),
